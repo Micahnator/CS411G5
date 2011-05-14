@@ -97,13 +97,19 @@ static void clook_exit_queue(struct elevator_queue *e)
 	kfree(cd);
 }
 
-// Implementing clook_set_request
+// Implementing additional functions
+
 static void clook_set_request(struct request_queue *q, struct request *rq, gfp_t)
 {
-	struct clook_data = q->elevator_data;
+	struct clook_data *cd = q->elevator_data;
 	
+	// Include private fields - elevator_private & elevator_private2
 }
 
+static void clook_put_request(struct request *rq)
+{
+	// your code goes here
+}
 
 static struct elevator_type elevator_clook = {
 	.ops = {
@@ -118,7 +124,7 @@ static struct elevator_type elevator_clook = {
 		
 		// Adding additional functions
 		.elevator_set_req_fn 		= clook_set_request,
-
+		.elevator_put_req_fn		= clook_put_request,
 	},
 	.elevator_name = "clook",
 	.elevator_owner = THIS_MODULE,

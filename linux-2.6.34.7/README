@@ -1,7 +1,11 @@
+<<<<<<< HEAD
 Warren
 Micah	
+=======
+This version of the kernel has been modified by Dr. Paulson's CS411 group 5 (Blaine Eakes, Warren Mui, David Overgaard, and Micah Losli) to implement a CLOOK IO Scheduler.
+>>>>>>> 08f0f2c265fc7066723f60c4192fbe4a3042dd7c
 
-Linux kernel release 2.6.xx <http://kernel.org/>
+	Linux kernel release 2.6.xx <http://kernel.org/>
 
 These are the release notes for Linux version 2.6.  Read them carefully,
 as they tell you what this is all about, explain how to install the

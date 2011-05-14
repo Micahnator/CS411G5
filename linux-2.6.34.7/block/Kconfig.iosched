@@ -2,6 +2,7 @@ if BLOCK
 
 menu "IO Schedulers"
 
+ 
 config IOSCHED_NOOP
 	bool
 	default y
@@ -49,6 +50,16 @@ config DEBUG_CFQ_IOSCHED
 	  Enable CFQ IO scheduling debugging in CFQ. Currently it makes
 	  blktrace output more verbose.
 
+config IOSCHED_CLOOK
+ 	tristate "CLOOK I/O Scheduler"
+	default y
+	---help---
+	  The CLOOK I/O scheduler keeps a list of I/O requests sorted by 
+	  physical location on the disk. Requests are serviced based on their
+	  position relative to the disk head as the head travels forward
+	  across the disk. When the head has serviced the highest numbered
+	  requested, the head moves to the lowest numbered request.
+
 choice
 	prompt "Default I/O scheduler"
 	default DEFAULT_CFQ
@@ -64,6 +75,9 @@ choice
 
 	config DEFAULT_NOOP
 		bool "No-op"
+
+ 	config DEFAULT_CLOOK
+		bool "CLOOK" if IOSCHED_CLOOK=y
 
 endchoice
 

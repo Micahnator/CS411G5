@@ -40,7 +40,15 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 {
 	struct clook_data *cd = q->elevator->elevator_data;
 
-	list_add_tail(&rq->queuelist, &cd->queue);
+	//check if the list is empty, and if it is, just put the request in the queue
+	if (list_empty(&cd->queue))
+		list_add_tail(&rq->queuelist, &cd->queue);
+	else {//sort through the list and insert the request in the proper place
+
+
+
+	}
+
 }
 
 static int clook_queue_empty(struct request_queue *q)

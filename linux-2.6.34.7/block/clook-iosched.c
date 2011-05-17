@@ -38,19 +38,38 @@ static int clook_dispatch(struct request_queue *q, int force)
 
 static void clook_add_request(struct request_queue *q, struct request *rq)
 {
-	struct clook_data *cd = q->elevator->elevator_data;
-	struct list_head* current;//pointer to the current element in the linux linked list
-	struct request * temp;//pointer to the request struct pointed to by current
+	struct clook_data *cd = q->elevator->elevator_data;//get the request list head
+	struct request * current;//pointer to the current element in the linux linked list
+	sector_t new_request_sector, cur_request_sector;
+
+
+	//get the request's sector
+	request_sector = rq->bio->bi_sector;
 
 	//check if the list is empty, and if it is, just put the request in the queue
 	if (list_empty(&cd->queue))
 		list_add_tail(&rq->queuelist, &cd->queue);
 	else {//sort through the list and insert the request in the proper place
-		list_for_each(current, (&cd->queue) ) {
+		list_for_each_entry(current, (&cd->queue), queuelist) {
+			//get the sector of the current node
+			cur_request_sector = current->bio->bi_sector;
+			
+			if (new_request_sector > cur_request_sector) {
+				//insert the request after cur
+				list_add(rq->queuelist, current->queuelist);
+				return;
+			}
+
+			if (unlikely(list_is_last(current->queuelist))) {
+				//then append the request to the end of the queue
+				list_add(rq->queuelist, current->queuelist);
+				return;
+			}
 
 		}
 	}
 
+	return;
 }
 
 static int clook_queue_empty(struct request_queue *q)

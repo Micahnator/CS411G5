@@ -38,34 +38,45 @@ static int clook_dispatch(struct request_queue *q, int force)
 
 static void clook_add_request(struct request_queue *q, struct request *rq)
 {
-	struct clook_data *cd = q->elevator->elevator_data;//get the request list head
-	struct request * current;//pointer to the current element in the linux linked list
-	sector_t new_request_sector, cur_request_sector;
-
+	//get the request struct
+	struct clook_data *cd = q->elevator->elevator_data;
+	//pointer to the current element in the linux linked list
+	struct request * current;
+	sector_t new_request_sector, cur_request_sector, next_request_sector;
 
 	//get the request's sector
-	request_sector = rq->bio->bi_sector;
+	new_request_sector = rq->bio->bi_sector;
 
-	//check if the list is empty, and if it is, just put the request in the queue
+	//If the list is empty
 	if (list_empty(&cd->queue))
-		list_add_tail(&rq->queuelist, &cd->queue);
-	else {//sort through the list and insert the request in the proper place
-		list_for_each_entry(current, (&cd->queue), queuelist) {
-			//get the sector of the current node
+		list_add(&rq->queuelist, &cd->queue);
+
+	//Sort through the list and insert the request in the proper place
+	else {
+		list_for_each_entry(current, &cd->queue, queuelist) {
+
+			//get the sector of the current and next node
 			cur_request_sector = current->bio->bi_sector;
-			
-			if (new_request_sector > cur_request_sector) {
-				//insert the request after cur
-				list_add(rq->queuelist, current->queuelist);
-				return;
-			}
+			next_request_sector = current->bio->bi_next->bi_sector;
 
-			if (unlikely(list_is_last(current->queuelist))) {
-				//then append the request to the end of the queue
-				list_add(rq->queuelist, current->queuelist);
-				return;
+			//If the request is one element in the list
+			if(cur_reqeust_sector==next_request_sector) {
+				if(new_request_sector < cur_request_sector)
+					list_add_tail(&rq->queuelist, &current->queuelist);
+				else
+					list_add(&rq->queuelist, &current->queuelist);
 			}
-
+			else if((new_request_sector > cur_request_sector) &&
+			(new_request_sector < next_request_sector))
+				list_add(&rq->queuelist, &current->queuelist);
+			//If new is larger than anything in the list
+			else if((new_request_sector > cur_request_sector) &&
+			(cur_request_sector > next_request_sector))
+				list_add(&rq->queuelist, &current->queuelist);
+			//If new is smaller than anything in the list
+			else if((new_request_sector < next_request_sector) &&
+			(cur_request_sector > next_request_sector))
+				list_add(&rq->queuelist, &current->queuelist);
 		}
 	}
 

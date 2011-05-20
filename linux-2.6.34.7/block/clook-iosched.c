@@ -27,27 +27,36 @@ static int clook_dispatch(struct request_queue *q, int force)
 	struct clook_data *cd = q->elevator->elevator_data;
 	static sector_t disk_head = 0;
 	int req_found = 0;
-	
+
 	if (!list_empty(&cd->queue)) {
 		struct request *to_be;
 		list_for_each_entry(to_be, &cd->queue, queuelist) {
 			//to_be = list_entry(cd->queue.next, struct request, queuelist);
-			
+
 			if (to_be->bio->bi_sector >= disk_head) {
 				disk_head = to_be->bio->bi_sector + to_be->bio->bi_size;
 				req_found = 1;
 				break;
 			}
 		}
-		
+
 		if (req_found == 0) {
 			to_be = list_entry(cd->queue.next, struct request, queuelist);
 			disk_head = to_be->bio->bi_sector + to_be->bio->bi_size;
 		}
 		list_del_init(&to_be->queuelist);
 		elv_dispatch_add_tail(q, to_be);
-		
+
 		printk("[CLOOK] dsp <%u> <%ul>\n", rq_data_dir(rq), rq->bio->bi_sector);
+
+		//print out the state of the queue
+		struct request* cur_req;
+		int i = 0;
+		list_for_each_entry(cur_req, &cd->queue, queuelist){
+			printk("[node:%d sector:%lu]\n", i, (unsigned long)(rq_data_dir(cur_req)));
+		}	
+
+
 		return 1;
 	}
 	return 0;
@@ -158,9 +167,9 @@ static void clook_exit_queue(struct elevator_queue *e)
 
 // Implementing additional functions
 /*
-	 static void clook_set_request(struct request_queue *q, struct request *rq, gfp_t)
-	 {
-	 struct clook_data *cd = q->elevator_data;
+   static void clook_set_request(struct request_queue *q, struct request *rq, gfp_t)
+   {
+   struct clook_data *cd = q->elevator_data;
 
 // Include private fields - elevator_private & elevator_private2
 }

@@ -84,6 +84,8 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 			else if((new_request_sector < next_request_sector) &&
 					(cur_request_sector > next_request_sector))
 				list_add(&rq->queuelist, &cur_req->queuelist);
+			else if(new_request_sector == cur_request_sector)
+				list_add(&rq->queuelist, &cur_request_sector);
 		}
 	}
 	return;

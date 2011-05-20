@@ -27,10 +27,10 @@ static int clook_dispatch(struct request_queue *q, int force)
 	struct clook_data *cd = q->elevator->elevator_data;
 
 	if (!list_empty(&cd->queue)) {
-		static struct request *rq = list_entry(cd->queue.next, struct request, queuelist);
+		struct request *rq = list_entry(cd->queue.next, struct request, queuelist);
 		list_del_init(&rq->queuelist);
 		elv_dispatch_add_tail(q, rq);
-		rq = list_entry(rq->q->queue_head.next, struct request, queuelist);
+		//rq = list_entry(rq->q->queue_head.next, struct request, queuelist);
 		return 1;
 	}
 	return 0;
@@ -62,7 +62,7 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 			if(&cur_req->queuelist != &cd->queue)
 				next_request_sector = cur_req->bio->bi_next->bi_sector;
 			else
-				next_request_sector = &cd->queue->next->bio->bi_sector;
+				next_request_sector = &cd->queue.next->bio->bi_sector;
 
 			//If the request is one element in the list
 			if(cur_request_sector==next_request_sector) {

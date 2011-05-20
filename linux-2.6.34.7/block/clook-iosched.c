@@ -60,7 +60,7 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 			next_request_sector = current->bio->bi_next->bi_sector;
 
 			//If the request is one element in the list
-			if(cur_reqeust_sector==next_request_sector) {
+			if(cur_request_sector==next_request_sector) {
 				if(new_request_sector < cur_request_sector)
 					list_add_tail(&rq->queuelist, &current->queuelist);
 				else

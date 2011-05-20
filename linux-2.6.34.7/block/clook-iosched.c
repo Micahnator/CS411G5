@@ -32,6 +32,14 @@ static int clook_dispatch(struct request_queue *q, int force)
 		printk("[CLOOK] dsp <%u> <%u>\n", rq_data_dir(rq), rq->bio->bi_sector);
 		elv_dispatch_add_tail(q, rq);
 		//rq = list_entry(rq->q->queue_head.next, struct request, queuelist);
+		
+		//print out the state of the queue
+		struct request* cur_req;
+		int i = 0;
+		list_for_each_entry(cur_req, &cd->queue, queuelist){
+			printk("[node:%d sector:%lu]\n", i, (unsigned long)(rq_data_dir(cur_req)));
+		}
+		
 		return 1;
 	}
 	return 0;

@@ -17,7 +17,7 @@ struct clook_data {
 };
 
 static void clook_merged_requests(struct request_queue *q, struct request *rq,
-				 struct request *next)
+		struct request *next)
 {
 	list_del_init(&next->queuelist);
 }
@@ -57,12 +57,14 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 
 			//get the sector of the cur_req and next node
 			cur_request_sector = cur_req->bio->bi_sector;
-			
+
 			//If next element is not the head
 			if(&cur_req->queuelist != &cd->queue)
 				next_request_sector = cur_req->bio->bi_next->bi_sector;
-			else
-				next_request_sector = &cd->queue.next->bio->bi_sector;
+			else {
+				struct request * pos = list_entry((&cd->queue)->next, typeof(*pos), queuelist);
+				next_request_sector = pos->bio->bi_sector;
+			}
 
 			//If the request is one element in the list
 			if(cur_request_sector==next_request_sector) {
@@ -72,21 +74,21 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 					list_add(&rq->queuelist, &cur_req->queuelist);
 			}
 			else if((new_request_sector > cur_request_sector) &&
-			(new_request_sector < next_request_sector))
+					(new_request_sector < next_request_sector))
 				list_add(&rq->queuelist, &cur_req->queuelist);
 			//If new is larger than anything in the list
 			else if((new_request_sector > cur_request_sector) &&
-			(cur_request_sector > next_request_sector))
+					(cur_request_sector > next_request_sector))
 				list_add(&rq->queuelist, &cur_req->queuelist);
 			//If new is smaller than anything in the list
 			else if((new_request_sector < next_request_sector) &&
-			(cur_request_sector > next_request_sector))
+					(cur_request_sector > next_request_sector))
 				list_add(&rq->queuelist, &cur_req->queuelist);
 		}
 	}
-
 	return;
 }
+
 
 static int clook_queue_empty(struct request_queue *q)
 {
@@ -95,7 +97,7 @@ static int clook_queue_empty(struct request_queue *q)
 	return list_empty(&cd->queue);
 }
 
-static struct request *
+	static struct request *
 clook_former_request(struct request_queue *q, struct request *rq)
 {
 	struct clook_data *cd = q->elevator->elevator_data;
@@ -105,7 +107,7 @@ clook_former_request(struct request_queue *q, struct request *rq)
 	return list_entry(rq->queuelist.prev, struct request, queuelist);
 }
 
-static struct request *
+	static struct request *
 clook_latter_request(struct request_queue *q, struct request *rq)
 {
 	struct clook_data *cd = q->elevator->elevator_data;
@@ -136,18 +138,18 @@ static void clook_exit_queue(struct elevator_queue *e)
 
 // Implementing additional functions
 /*
-static void clook_set_request(struct request_queue *q, struct request *rq, gfp_t)
-{
-	struct clook_data *cd = q->elevator_data;
-	
-	// Include private fields - elevator_private & elevator_private2
+	 static void clook_set_request(struct request_queue *q, struct request *rq, gfp_t)
+	 {
+	 struct clook_data *cd = q->elevator_data;
+
+// Include private fields - elevator_private & elevator_private2
 }
 
 static void clook_put_request(struct request *rq)
 {
-	// your code goes here
+// your code goes here
 }
-*/
+ */
 
 static struct elevator_type elevator_clook = {
 	.ops = {
@@ -159,7 +161,7 @@ static struct elevator_type elevator_clook = {
 		.elevator_latter_req_fn		= clook_latter_request,
 		.elevator_init_fn		= clook_init_queue,
 		.elevator_exit_fn		= clook_exit_queue,
-		
+
 		// Adding additional functions
 		//.elevator_set_req_fn 		= clook_set_request,
 		//.elevator_put_req_fn		= clook_put_request,

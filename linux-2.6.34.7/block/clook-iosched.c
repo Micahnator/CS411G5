@@ -47,7 +47,7 @@ static int clook_dispatch(struct request_queue *q, int force)
 		list_del_init(&to_be->queuelist);
 		elv_dispatch_add_tail(q, to_be);
 
-		printk("[CLOOK] dsp <%u> <%ul>\n", rq_data_dir(rq), to_be->bio->bi_sector);
+		printk("[CLOOK] dsp <%u> <%lu>\n", rq_data_dir(to_be), to_be->bio->bi_sector);
 
 		//print out the state of the queue
 		struct request* cur_req;

@@ -25,27 +25,14 @@ static void clook_merged_requests(struct request_queue *q, struct request *rq,
 static int clook_dispatch(struct request_queue *q, int force)
 {
 	struct clook_data *cd = q->elevator->elevator_data;
-	static sector_t disk_head = 0;
-	int req_found = 0;
+	static sector_t disk_head;
 	
 	if (!list_empty(&cd->queue)) {
-		struct request *to_be;
-		list_for_each_entry(to_be, &cd->queue, queuelist) {
-		//to_be = list_entry(cd->queue.next, struct request, queuelist);
-			
-			if (to_be->bio->bi_sector >= disk_head) {
-				disk_head = to_be->bio->bi_sector + to_be->bio->bi_size;
-				req_found = 1;
-				break;
-			}
-		}
-		
-		if (req_found == 0) {
 			to_be = list_entry(cd->queue.next, struct request, queuelist);
-			disk_head = to_be->bio->bi_sector + to_be->bio->bi_size;
-		}
 		list_del_init(&to_be->queuelist);
+		printk("[CLOOK] dsp <%u> <%ul>\n", rq_data_dir(rq), rq->bio->bi_sector);
 		elv_dispatch_add_tail(q, to_be);
+		to_be = list_entry((&to_be->quelist)->next, struct request, queuelist);
 		
 		printk("[CLOOK] dsp <%u> <%ul>\n", rq_data_dir(rq), rq->bio->bi_sector);
 		return 1;

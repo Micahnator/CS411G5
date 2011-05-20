@@ -30,7 +30,8 @@ static int clook_dispatch(struct request_queue *q, int force)
 		struct request *rq;
 		rq = list_entry(cd->queue.next, struct request, queuelist);
 		list_del_init(&rq->queuelist);
-		elv_dispatch_sort(q, rq);
+		//elv_dispatch_sort(q, rq);
+		elv_dispatch_add_tail(q, rq);
 		return 1;
 	}
 	return 0;
@@ -40,8 +41,8 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 {
 	//get the request struct
 	struct clook_data *cd = q->elevator->elevator_data;
-	//pointer to the current element in the linux linked list
-	struct request * current;
+	//pointer to the cur_req element in the linux linked list
+	struct request * cur_req;
 	sector_t new_request_sector, cur_request_sector, next_request_sector;
 
 	//get the request's sector
@@ -53,30 +54,30 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 
 	//Sort through the list and insert the request in the proper place
 	else {
-		list_for_each_entry(current, &cd->queue, queuelist) {
+		list_for_each_entry(cur_req, &cd->queue, queuelist) {
 
-			//get the sector of the current and next node
-			cur_request_sector = current->bio->bi_sector;
-			next_request_sector = current->bio->bi_next->bi_sector;
+			//get the sector of the cur_req and next node
+			cur_request_sector = cur_req->bio->bi_sector;
+			next_request_sector = cur_req->bio->bi_next->bi_sector;
 
 			//If the request is one element in the list
 			if(cur_reqeust_sector==next_request_sector) {
 				if(new_request_sector < cur_request_sector)
-					list_add_tail(&rq->queuelist, &current->queuelist);
+					list_add_tail(&rq->queuelist, &cur_req->queuelist);
 				else
-					list_add(&rq->queuelist, &current->queuelist);
+					list_add(&rq->queuelist, &cur_req->queuelist);
 			}
 			else if((new_request_sector > cur_request_sector) &&
 			(new_request_sector < next_request_sector))
-				list_add(&rq->queuelist, &current->queuelist);
+				list_add(&rq->queuelist, &cur_req->queuelist);
 			//If new is larger than anything in the list
 			else if((new_request_sector > cur_request_sector) &&
 			(cur_request_sector > next_request_sector))
-				list_add(&rq->queuelist, &current->queuelist);
+				list_add(&rq->queuelist, &cur_req->queuelist);
 			//If new is smaller than anything in the list
 			else if((new_request_sector < next_request_sector) &&
 			(cur_request_sector > next_request_sector))
-				list_add(&rq->queuelist, &current->queuelist);
+				list_add(&rq->queuelist, &cur_req->queuelist);
 		}
 	}
 
@@ -130,7 +131,7 @@ static void clook_exit_queue(struct elevator_queue *e)
 }
 
 // Implementing additional functions
-
+/*
 static void clook_set_request(struct request_queue *q, struct request *rq, gfp_t)
 {
 	struct clook_data *cd = q->elevator_data;
@@ -142,6 +143,7 @@ static void clook_put_request(struct request *rq)
 {
 	// your code goes here
 }
+*/
 
 static struct elevator_type elevator_clook = {
 	.ops = {
@@ -155,8 +157,8 @@ static struct elevator_type elevator_clook = {
 		.elevator_exit_fn		= clook_exit_queue,
 		
 		// Adding additional functions
-		.elevator_set_req_fn 		= clook_set_request,
-		.elevator_put_req_fn		= clook_put_request,
+		//.elevator_set_req_fn 		= clook_set_request,
+		//.elevator_put_req_fn		= clook_put_request,
 	},
 	.elevator_name = "clook",
 	.elevator_owner = THIS_MODULE,

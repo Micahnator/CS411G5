@@ -29,7 +29,7 @@ static int clook_dispatch(struct request_queue *q, int force)
 	if (!list_empty(&cd->queue)) {
 		struct request *rq = list_entry(cd->queue.next, struct request, queuelist);
 		list_del_init(&rq->queuelist);
-		printk("[CLOOK] dsp <%u> <%u>\n", rq_data_dir(rq), rq->bio->bi_sector);
+		printk("[CLOOK] dsp <%u> <%ul>\n", rq_data_dir(rq), rq->bio->bi_sector);
 		elv_dispatch_add_tail(q, rq);
 		//rq = list_entry(rq->q->queue_head.next, struct request, queuelist);
 		return 1;
@@ -89,7 +89,7 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 				list_add(&rq->queuelist, &cur_req->queuelist);
 		}
 	}
-	printk("[CLOOK] add <%u> <%u>\n", rq_data_dir(rq), rq->bio->bi_sector);
+	printk("[CLOOK] add <%u> <%ul>\n", rq_data_dir(rq), rq->bio->bi_sector);
 	return;
 }
 

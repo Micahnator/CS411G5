@@ -32,7 +32,9 @@ static int clook_dispatch(struct request_queue *q, int force)
 		struct request *to_be;
 		list_for_each_entry(to_be, &cd->queue, queuelist) {
 			//to_be = list_entry(cd->queue.next, struct request, queuelist);
-
+			sector_t showme = to_be->bio->sector;
+			printk("THE CURRENT PROCCES TO BE DISPATCHED: SECTOR #:<%lu>", showme); 
+			
 			if (to_be->bio->bi_sector >= disk_head) {
 				disk_head = to_be->bio->bi_sector + to_be->bio->bi_size;
 				req_found = 1;
@@ -72,6 +74,7 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 
 	//get the request's sector
 	new_request_sector = rq->bio->bi_sector;
+	
 
 	//If the list is empty
 	if (list_empty(&cd->queue))
@@ -112,7 +115,11 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 				list_add(&rq->queuelist, &cur_req->queuelist);
 			else if(new_request_sector == cur_request_sector)
 				list_add(&rq->queuelist, &cur_req->queuelist);
+			printk("ADDED SECTOR #:<%lu>, CURRENT SECTOR #:<%lu>, NEXT SECTOR #: <%lu>", 
+				   new_request_sector, cur_request_sector, next_request_sector);
 		}
+		
+		printk("CUR SECTOR #: <%lu>, NEXT SECTOR #: <%lu>", cur_request_sector, next_request_sector);
 	}
 	printk("[CLOOK] add <%u> <%ul>\n", rq_data_dir(rq), rq->bio->bi_sector);
 	return;

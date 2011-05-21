@@ -12,6 +12,10 @@
 #include <linux/slab.h>
 #include <linux/init.h>
 
+//Function prototypes
+static struct request *
+clook_latter_request(struct request_queue *q, struct request *rq);
+
 struct clook_data {
 	struct list_head queue;
 };
@@ -31,10 +35,6 @@ static int clook_dispatch(struct request_queue *q, int force)
 	if (!list_empty(&cd->queue)) {
 		struct request *to_be;
 		list_for_each_entry(to_be, &cd->queue, queuelist) {
-			//to_be = list_entry(cd->queue.next, struct request, queuelist);
-			sector_t showme = to_be->bio->bi_sector;
-			printk("THE CURRENT PROCCES TO BE DISPATCHED: SECTOR #:<%lu>", showme); 
-			
 			if (to_be->bio->bi_sector >= disk_head) {
 				disk_head = to_be->bio->bi_sector + to_be->bio->bi_size;
 				req_found = 1;
@@ -49,15 +49,7 @@ static int clook_dispatch(struct request_queue *q, int force)
 		list_del_init(&to_be->queuelist);
 		elv_dispatch_add_tail(q, to_be);
 
-		printk("[CLOOK] dsp <%u> <%lu>\n", rq_data_dir(to_be), to_be->bio->bi_sector);
-
-		//print out the state of the queue
-		struct request* cur_req;
-		int i = 0;
-		list_for_each_entry(cur_req, &cd->queue, queuelist){
-			printk("[node:%d sector:%lu]\n", i, (unsigned long)(rq_data_dir(cur_req)));
-		}	
-
+		printk("[CLOOK] dsp R/W: <%u> Sector: <%lu>\n", rq_data_dir(to_be), to_be->bio->bi_sector);
 
 		return 1;
 	}
@@ -70,33 +62,29 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 	struct clook_data *cd = q->elevator->elevator_data;
 	//pointer to the cur_req element in the linux linked list
 	struct request * cur_req;
-	sector_t new_request_sector, cur_request_sector, next_request_sector;
+	struct request * pos;
+	sector_t cur_request_sector=5, next_request_sector=NULL, new_request_sector=NULL; 
 
 	//get the request's sector
 	new_request_sector = rq->bio->bi_sector;
-	
 
-	//If the list is empty
-	if (list_empty(&cd->queue))
-		list_add(&rq->queuelist, &cd->queue);
-
-	//Sort through the list and insert the request in the proper place
-	else {
+		int flag=0;
 		list_for_each_entry(cur_req, &cd->queue, queuelist) {
-
-			//get the sector of the cur_req and next node
+		
+		//cur_req = clook_latter_request(q, &cd->queue);
+		if(cur_req != NULL)
+		{
 			cur_request_sector = cur_req->bio->bi_sector;
-
-			//If next element is not the head
-			if(&cur_req->queuelist != &cd->queue)
-				next_request_sector = cur_req->bio->bi_next->bi_sector;
-			else {
-				struct request * pos = list_entry((&cd->queue)->next, typeof(*pos), queuelist);
+			pos = clook_latter_request(q, cur_req); //list_entry((&cd->queue)->next, typeof(*pos), queuelist);
+			if(pos)
 				next_request_sector = pos->bio->bi_sector;
-			}
+		}
 
-			printk("ADDED SECTOR #:<%lu>, CURRENT SECTOR #:<%lu>, NEXT SECTOR #: <%lu>",
+
+
+			printk("NEW SECTOR #:<%lu>, CURRENT SECTOR #:<%lu>, NEXT SECTOR #: <%lu>\n",
                                    new_request_sector, cur_request_sector, next_request_sector);
+
 
 			//If the request is one element in the list
 			if(cur_request_sector==next_request_sector) {
@@ -104,26 +92,43 @@ static void clook_add_request(struct request_queue *q, struct request *rq)
 					list_add_tail(&rq->queuelist, &cur_req->queuelist);
 				else
 					list_add(&rq->queuelist, &cur_req->queuelist);
+				flag=1;
+				break;
 			}
 			else if((new_request_sector > cur_request_sector) &&
-					(new_request_sector < next_request_sector))
+					(new_request_sector < next_request_sector)) {
 				list_add(&rq->queuelist, &cur_req->queuelist);
+				flag=1;
+				break;
+			}
 			//If new is larger than anything in the list
 			else if((new_request_sector > cur_request_sector) &&
-					(cur_request_sector > next_request_sector))
+					(cur_request_sector > next_request_sector)) {
 				list_add(&rq->queuelist, &cur_req->queuelist);
+				flag=1;
+				break;
+			}
 			//If new is smaller than anything in the list
 			else if((new_request_sector < next_request_sector) &&
-					(cur_request_sector > next_request_sector))
+					(cur_request_sector > next_request_sector)) {
 				list_add(&rq->queuelist, &cur_req->queuelist);
-			else if(new_request_sector == cur_request_sector)
+				flag=1;
+				break;
+			}
+			else if(new_request_sector == cur_request_sector) {
 				list_add(&rq->queuelist, &cur_req->queuelist);
+				flag=1;
+				break;
+			}
 		}
-		
-		printk("CUR SECTOR #: <%lu>, NEXT SECTOR #: <%lu>", cur_request_sector, next_request_sector);
-	}
-	printk("[CLOOK] add <%u> <%ul>\n", rq_data_dir(rq), rq->bio->bi_sector);
-	return;
+
+		//If the list is empty
+		if (flag==0)
+			list_add(&rq->queuelist, &cd->queue);
+
+		//	}
+		printk("[CLOOK] add R/W: <%u> Sector: <%lu>\n", rq_data_dir(rq), rq->bio->bi_sector);
+		return;
 }
 
 
